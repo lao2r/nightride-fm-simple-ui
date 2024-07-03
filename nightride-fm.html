@@ -1,0 +1,347 @@
+<html><head><base href="https://nightride.fm/">
+<title>Synthwave Radio - NightRide.fm</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Orbitron', sans-serif;
+    background-color: #171615;
+    color: #beb6a9;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    height: 600px;
+    background: linear-gradient(45deg, #3a1c3d, #251320);
+    border: 2px solid #a923c2;
+    border-radius: 10px;
+    box-shadow: 0 0 20px #e02cd2;
+    overflow: hidden;
+  }
+
+  .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .overlay.noise {
+    z-index: 800;
+    animation: grain 8s steps(10) infinite;
+    background-image: url(https://nightride.fm/static/img/noise.png);
+    height: 400%;
+    left: -50%;
+    top: -150%;
+    width: 300%;
+    background-size: auto;
+    opacity: .2;
+  }
+
+  .overlay.scanline {
+    z-index: 1010;
+    animation: scanline 7.77s linear infinite;
+    background: linear-gradient(to bottom,
+                transparent 80%,
+                rgba(0, 0, 0, 0.3) 90%);
+    background-size: 100% 4px;
+	background-repeat: repeat-x;
+  }
+
+  @keyframes grain {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-5%, -10%); }
+    20% { transform: translate(-15%, 5%); }
+    30% { transform: translate(7%, -25%); }
+    40% { transform: translate(-5%, 25%); }
+    50% { transform: translate(-15%, 10%); }
+    60% { transform: translate(15%, 0%); }
+    70% { transform: translate(0%, 15%); }
+    80% { transform: translate(3%, 35%); }
+    90% { transform: translate(-10%, 10%); }
+  }
+
+  @keyframes scanline {
+    100% { transform: translateY(0); }
+    0% { transform: translateY(100%); }
+  }
+
+   .logo {
+       position: absolute;
+       top: 20px;
+       left: 20px;
+       font-size: 24px;
+       color: #d8faf2;
+       text-shadow: 0 0 10px #84e7ff;
+   }
+
+   .controls {
+       position: absolute;
+       top: 20px;
+       left: 50%;
+       transform: translateX(-50%);
+       display: flex;
+       align-items: center;
+       height: 40px;
+   }
+
+   .btn {
+       background: none;
+       border: none;
+       color: #d8faf2;
+       font-size: 24px;
+       cursor: pointer;
+       margin: 0 10px;
+       transition: all 0.3s ease;
+       width: 30px;
+   }
+
+  .btn:hover {
+    text-shadow: 0 0 10px #e02cd2;
+  }
+
+   .volume-bar {
+       width: 100px;
+       left: 10;
+       height: 5px;
+       background: #435155;
+       position: relative;
+       border-radius: 5px;
+       overflow: hidden;
+   }
+
+  .volume-level {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 50%;
+      background: linear-gradient(90deg, #a923c2, #e02cd2);
+      box-shadow: 0 0 10px #e02cd2;
+  }
+
+  #status {
+      position: absolute;
+      top: 60px;
+      left: 20px;
+      text-shadow: 0 0 black;
+      font-size: 14px;
+  }
+
+  canvas {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  #frequencyCanvas {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="overlay noise"></div>
+	<div class="overlay scanlines __web-inspector-hide-shortcut__"></div>
+    <div class="overlay scanline"></div>
+    <div class="logo">NIGHTRIDE.FM</div>
+    <div id="status">Ready to play</div>
+    <canvas id="frequencyCanvas"></canvas>
+    <canvas id="barsCanvas"></canvas>
+    <div class="controls" style="top: 50px;">
+  <button id="playBtn" class="btn">▶</button>
+  <button id="muteBtn" class="btn">♫</button>
+  <div class="volume-bar">
+    <div class="volume-level"></div>
+  </div>
+</div>
+  </div>
+
+  <script>
+    let audioElement;
+    let playing = false;
+    let audioContext;
+    let analyser;
+    let isMuted = false;
+
+    const playBtn = document.getElementById('playBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const status = document.getElementById('status');
+    const volumeControl = document.querySelector('.volume-level');
+    const frequencyCanvas = document.getElementById('frequencyCanvas');
+    const barsCanvas = document.getElementById('barsCanvas');
+
+    playBtn.addEventListener('click', togglePlay);
+    muteBtn.addEventListener('click', toggleMute);
+    volumeControl.parentElement.addEventListener('click', adjustVolume);
+
+    function togglePlay() {
+      if (playing) {
+        pauseAudio();
+      } else {
+        playAudio();
+      }
+    }
+
+    function playAudio() {
+      if (!audioElement) {
+        audioElement = new Audio('https://stream.nightride.fm/nightride.mp3');
+        audioElement.crossOrigin = "anonymous";
+        
+        audioElement.onplay = () => {
+          status.textContent = 'Now playing';
+          playing = true;
+          playBtn.textContent = '❚❚';
+          setupAudioContext();
+        };
+        
+        audioElement.onpause = () => {
+          status.textContent = 'Paused';
+          playing = false;
+          playBtn.textContent = '▶';
+        };
+        
+        audioElement.onerror = (e) => {
+          console.error('Audio error:', e);
+          status.textContent = 'Error: Audio playback failed';
+          playing = false;
+          playBtn.textContent = '▶';
+        };
+      }
+
+      status.textContent = 'Connecting...';
+      audioElement.play().catch(error => {
+        console.error('Error playing audio:', error);
+        status.textContent = 'Error: Unable to play audio';
+      });
+    }
+
+    function pauseAudio() {
+      if (audioElement) {
+        audioElement.pause();
+      }
+    }
+
+    function toggleMute() {
+      if (audioElement) {
+        audioElement.muted = !audioElement.muted;
+        isMuted = audioElement.muted;
+        muteBtn.textContent = isMuted ? '✖' : '♫';
+      }
+    }
+
+    function adjustVolume(e) {
+      const rect = volumeControl.parentElement.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const width = rect.width;
+      const volume = Math.max(0, Math.min(1, x / width));
+      
+      if (audioElement) {
+        audioElement.volume = volume;
+        volumeControl.style.width = `${volume * 100}%`;
+      }
+    }
+
+    function setupAudioContext() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaElementSource(audioElement);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+      }
+      
+      requestAnimationFrame(updateVisualizers);
+    }
+
+    function updateVisualizers() {
+      drawFrequency();
+      drawBars();
+      requestAnimationFrame(updateVisualizers);
+    }
+
+    function drawFrequency() {
+      const WIDTH = frequencyCanvas.width;
+      const HEIGHT = frequencyCanvas.height;
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      
+      analyser.getByteFrequencyData(dataArray);
+      const ctx = frequencyCanvas.getContext('2d');
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#e02cd2';
+      ctx.beginPath();
+      
+      const sliceWidth = WIDTH * 1.0 / (bufferLength / 4);
+      let x = 0;
+      
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * HEIGHT / 2;
+        
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+        
+        x += sliceWidth;
+      }
+      
+      ctx.lineTo(WIDTH, HEIGHT / 2);
+      ctx.stroke();
+    }
+
+    function drawBars() {
+      const WIDTH = barsCanvas.width;
+      const HEIGHT = barsCanvas.height;
+      const bufferLength = analyser.frequencyBinCount / 8;
+      const dataArray = new Uint8Array(bufferLength);
+      
+      analyser.getByteFrequencyData(dataArray);
+      const ctx = barsCanvas.getContext('2d');
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      
+      const barWidth = (WIDTH / bufferLength) * 2.5;
+      let x = 0;
+      
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (dataArray[i] / 255) * HEIGHT;
+        
+        const gradient = ctx.createLinearGradient(0, HEIGHT, 0, HEIGHT - barHeight);
+        gradient.addColorStop(0, '#a923c2');
+        gradient.addColorStop(1, '#FD6AF2');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight);
+        
+        x += barWidth + 1;
+      }
+    }
+
+    // Set canvas sizes
+    function resizeCanvas() {
+      frequencyCanvas.width = frequencyCanvas.offsetWidth;
+      frequencyCanvas.height = frequencyCanvas.offsetHeight;
+      barsCanvas.width = barsCanvas.offsetWidth;
+      barsCanvas.height = barsCanvas.offsetHeight;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+  </script>
+
+</body></html>
