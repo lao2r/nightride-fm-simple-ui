@@ -230,44 +230,45 @@
     }
 
     function playAudio() {
-      if (audioElement) {
-        audioElement.pause();
-        audioElement = null;
-      }
-      
-      audioElement = new Audio('https://stream.nightride.fm/chillsynth.mp3');
-      audioElement.crossOrigin = "anonymous";
-      audioElement.volume = defaultVolume;
-      
-      audioElement.onplay = () => {
-        status.textContent = 'Now playing';
-        playing = true;
-        playBtn.textContent = '❚❚';
-        setupAudioContext();
-      };
-      
-      audioElement.onpause = () => {
-        status.textContent = 'Paused';
-        playing = false;
-        playBtn.textContent = '▶';
-      };
-      
-      audioElement.onerror = (e) => {
-        console.error('Audio error:', e);
-        status.textContent = 'Error: Audio playback failed';
-        playing = false;
-        playBtn.textContent = '▶';
-      };
+      if (!audioElement || audioElement.ended || audioElement.paused) {
+        if (audioElement) {
+          audioElement.pause();
+        }
+        
+        audioElement = new Audio('https://stream.nightride.fm/chillsynth.mp3');
+        audioElement.crossOrigin = "anonymous";
+        audioElement.volume = defaultVolume;
+        
+        audioElement.onplay = () => {
+          status.textContent = 'Now playing';
+          playing = true;
+          playBtn.textContent = '❚❚';
+          setupAudioContext();
+        };
+        
+        audioElement.onpause = () => {
+          status.textContent = 'Paused';
+          playing = false;
+          playBtn.textContent = '▶';
+        };
+        
+        audioElement.onerror = (e) => {
+          console.error('Audio error:', e);
+          status.textContent = 'Error: Audio playback failed';
+          playing = false;
+          playBtn.textContent = '▶';
+        };
 
-      status.textContent = 'Connecting...';
-      audioElement.play().catch(error => {
-        console.error('Error playing audio:', error);
-        status.textContent = 'Error: Unable to play audio';
-      });
+        status.textContent = 'Connecting...';
+        audioElement.play().catch(error => {
+          console.error('Error playing audio:', error);
+          status.textContent = 'Error: Unable to play audio';
+        });
+      }
     }
 
     function pauseAudio() {
-      if (audioElement) {
+      if (audioElement && !audioElement.paused) {
         audioElement.pause();
       }
     }
