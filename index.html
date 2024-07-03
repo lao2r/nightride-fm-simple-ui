@@ -137,6 +137,15 @@
       font-size: 14px;
   }
 
+  #currentInfo {
+      position: absolute;
+      top: 80px;
+      left: 20px;
+      text-shadow: 0 0 black;
+      font-size: 14px;
+      color: #e02cd2;
+  }
+
   canvas {
     position: absolute;
     bottom: 0;
@@ -155,16 +164,17 @@
     <div class="overlay noise"></div>
 	<div class="overlay scanlines __web-inspector-hide-shortcut__"></div>
     <div class="overlay scanline"></div>
-    <div class="logo">NIGHTRIDE.FM</div>
+    <div class="logo"><a href="https://nightride.fm" style="color: inherit; text-decoration: none;">NIGHTRIDE.FM</a></div>
     <div id="status">Ready to play</div>
+    <div id="currentInfo"></div>
     <canvas id="frequencyCanvas"></canvas>
     <canvas id="barsCanvas"></canvas>
     <div class="controls" style="top: 50px;">
   <button id="playBtn" class="btn">▶</button>
   <button id="muteBtn" class="btn">♫</button>
-  <div class="volume-bar">
-    <div class="volume-level"></div>
-  </div>
+  <div class="volume-bar" style="cursor: pointer;">
+  <div class="volume-level"></div>
+</div>
 </div>
   </div>
 
@@ -178,13 +188,37 @@
     const playBtn = document.getElementById('playBtn');
     const muteBtn = document.getElementById('muteBtn');
     const status = document.getElementById('status');
+    const currentInfo = document.getElementById('currentInfo');
     const volumeControl = document.querySelector('.volume-level');
     const frequencyCanvas = document.getElementById('frequencyCanvas');
     const barsCanvas = document.getElementById('barsCanvas');
+    
+    // Default volume to 50%
+    let defaultVolume = 0.5;
 
     playBtn.addEventListener('click', togglePlay);
     muteBtn.addEventListener('click', toggleMute);
     volumeControl.parentElement.addEventListener('click', adjustVolume);
+
+    const sseUrl = 'https://nightride.fm/meta';
+    const eventSource = new EventSource(sseUrl);
+
+    eventSource.onmessage = (event) => {
+      if (event.data !== "keepalive") {
+        let artist = "";
+        let title = "";
+
+        const data = JSON.parse(event.data);
+        if (data[0].station === 'chillsynth') {
+          artist = data[0].artist || "";
+          title = data[0].title || "";
+
+          if (artist || title) {
+            currentInfo.textContent = `${artist} - ${title}`;
+          }
+        }
+      }
+    };
 
     function togglePlay() {
       if (playing) {
@@ -198,6 +232,7 @@
       if (!audioElement) {
         audioElement = new Audio('https://stream.nightride.fm/chillsynth.mp3');
         audioElement.crossOrigin = "anonymous";
+        audioElement.volume = defaultVolume;
         
         audioElement.onplay = () => {
           status.textContent = 'Now playing';
@@ -343,5 +378,4 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
   </script>
-
 </body></html>
