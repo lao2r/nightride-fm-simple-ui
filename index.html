@@ -184,7 +184,7 @@
     let audioContext;
     let analyser;
     let isMuted = false;
-    let lastDataArray;
+    let animationId;
 
     const playBtn = document.getElementById('playBtn');
     const muteBtn = document.getElementById('muteBtn');
@@ -234,7 +234,7 @@
         audioElement.pause();
         audioElement = null;
       }
-
+      
       audioElement = new Audio('https://stream.nightride.fm/chillsynth.mp3');
       audioElement.crossOrigin = "anonymous";
       audioElement.volume = defaultVolume;
@@ -295,19 +295,22 @@
     function setupAudioContext() {
       if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
       }
-      analyser = audioContext.createAnalyser();
+      
       const source = audioContext.createMediaElementSource(audioElement);
       source.connect(analyser);
       analyser.connect(audioContext.destination);
       
-      requestAnimationFrame(updateVisualizers);
+      if (!animationId) {
+        updateVisualizers();
+      }
     }
 
     function updateVisualizers() {
       drawFrequency();
       drawBars();
-      requestAnimationFrame(updateVisualizers);
+      animationId = requestAnimationFrame(updateVisualizers);
     }
 
     function drawFrequency() {
@@ -317,16 +320,6 @@
       const dataArray = new Uint8Array(bufferLength);
       
       analyser.getByteFrequencyData(dataArray);
-      
-      if (!playing && lastDataArray) {
-        // Add some small piece of last bytes to dataArray
-        for (let i = 0; i < bufferLength; i++) {
-          dataArray[i] = Math.max(dataArray[i], lastDataArray[i] * 0.95);
-        }
-      }
-      
-      lastDataArray = new Uint8Array(dataArray);
-      
       const ctx = frequencyCanvas.getContext('2d');
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
       
@@ -361,16 +354,6 @@
       const dataArray = new Uint8Array(bufferLength);
       
       analyser.getByteFrequencyData(dataArray);
-      
-      if (!playing && lastDataArray) {
-        // Add some small piece of last bytes to dataArray
-        for (let i = 0; i < bufferLength; i++) {
-          dataArray[i] = Math.max(dataArray[i], lastDataArray[i] * 0.95);
-        }
-      }
-      
-      lastDataArray = new Uint8Array(dataArray);
-      
       const ctx = barsCanvas.getContext('2d');
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
       
