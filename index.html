@@ -19,10 +19,8 @@
     width: 100%;
     max-width: 800px;
     height: 600px;
-    background: linear-gradient(45deg, #3a1c3d, #251320);
-    border: 2px solid #a923c2;
     border-radius: 10px;
-    box-shadow: 0 0 20px #e02cd2;
+    box-shadow: 0 0 20px;
     overflow: hidden;
   }
 
@@ -80,8 +78,7 @@
        top: 20px;
        left: 20px;
        font-size: 24px;
-       color: #d8faf2;
-       text-shadow: 0 0 10px #84e7ff;
+       text-shadow: 0 0 10px;
    }
 
    .controls {
@@ -97,7 +94,6 @@
    .btn {
        background: none;
        border: none;
-       color: #d8faf2;
        font-size: 24px;
        cursor: pointer;
        margin: 0 10px;
@@ -106,14 +102,13 @@
    }
 
   .btn:hover {
-    text-shadow: 0 0 10px #e02cd2;
+    text-shadow: 0 0 10px;
   }
 
    .volume-bar {
        width: 100px;
        left: 10;
        height: 5px;
-       background: #435155;
        position: relative;
        border-radius: 5px;
        overflow: hidden;
@@ -125,8 +120,7 @@
       left: 0;
       height: 100%;
       width: 50%;
-      background: linear-gradient(90deg, #a923c2, #e02cd2);
-      box-shadow: 0 0 10px #e02cd2;
+      box-shadow: 0 0 10px;
   }
 
   #status {
@@ -143,7 +137,6 @@
       left: 20px;
       text-shadow: 0 0 black;
       font-size: 14px;
-      color: #e02cd2;
   }
 
   canvas {
@@ -157,9 +150,119 @@
     top: 50%;
     transform: translateY(-50%);
   }
+
+  .style-buttons {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 90%;
+  }
+
+  .style-btn {
+    background: #00000075;
+    border: 1px solid;
+    font-size: 12px;
+    cursor: pointer;
+    margin: 5px;
+    padding: 5px 10px;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+  }
+
+  .style-btn:hover, .style-btn.active {
+    color: #171615;
+  }
+
+  /* Chillsynth - unchanged */
+  body.chillsynth { background-color: #171615; color: #beb6a9; }
+  .chillsynth .container { background: linear-gradient(45deg, #3a1c3d, #251320); border: 2px solid #a923c2; box-shadow: 0 0 20px #e02cd2; }
+  .chillsynth .logo { color: #d8faf2; text-shadow: 0 0 10px #84e7ff; }
+  .chillsynth .btn { color: #d8faf2; }
+  .chillsynth .btn:hover { text-shadow: 0 0 10px #e02cd2; }
+  .chillsynth .volume-bar { background: #435155; }
+  .chillsynth .volume-level { background: linear-gradient(90deg, #a923c2, #e02cd2); box-shadow: 0 0 10px #e02cd2; }
+  .chillsynth #currentInfo { color: #e02cd2; }
+  .chillsynth .style-btn { border-color: #a923c2; color: #d8faf2; }
+  .chillsynth .style-btn:hover, .chillsynth .style-btn.active { background-color: #a923c2; }
+
+  /* Nightride - Blade Runner inspired */
+  body.nightride { background-color: #0d0e16; color: #66fcf1; }
+  .nightride .container { background: linear-gradient(45deg, #1f2833, #0b0c10); border: 2px solid #45a29e; box-shadow: 0 0 20px #66fcf1; }
+  .nightride .logo { color: #66fcf1; text-shadow: 0 0 10px #45a29e; }
+  .nightride .btn { color: #66fcf1; }
+  .nightride .btn:hover { text-shadow: 0 0 10px #45a29e; }
+  .nightride .volume-bar { background: #1f2833; }
+  .nightride .volume-level { background: linear-gradient(90deg, #45a29e, #66fcf1); box-shadow: 0 0 10px #66fcf1; }
+  .nightride #currentInfo { color: #45a29e; }
+  .nightride .style-btn { border-color: #45a29e; color: #66fcf1; }
+  .nightride .style-btn:hover, .nightride .style-btn.active { background-color: #45a29e; }
+
+  /* Datawave - 80s Computer Terminal */
+  body.datawave { background-color: #000000; color: #00ff00; }
+  .datawave .container { background: linear-gradient(45deg, #001100, #002200); border: 2px solid #00ff00; box-shadow: 0 0 20px #00ff00; }
+  .datawave .logo { color: #00ff00; text-shadow: 0 0 10px #00aa00; }
+  .datawave .btn { color: #00ff00; }
+  .datawave .btn:hover { text-shadow: 0 0 10px #00aa00; }
+  .datawave .volume-bar { background: #001100; }
+  .datawave .volume-level { background: linear-gradient(90deg, #00aa00, #00ff00); box-shadow: 0 0 10px #00ff00; }
+  .datawave #currentInfo { color: #00aa00; }
+  .datawave .style-btn { border-color: #00aa00; color: #00ff00; }
+  .datawave .style-btn:hover, .datawave .style-btn.active { background-color: #00aa00; }
+
+  /* Spacesynth - 80s Sci-Fi */
+  body.spacesynth { background-color: #0c0b13; color: #e762d7; }
+  .spacesynth .container { background: linear-gradient(45deg, #1e1637, #0c0b13); border: 2px solid #e762d7; box-shadow: 0 0 20px #b52cc7; }
+  .spacesynth .logo { color: #e762d7; text-shadow: 0 0 10px #b52cc7; }
+  .spacesynth .btn { color: #e762d7; }
+  .spacesynth .btn:hover { text-shadow: 0 0 10px #b52cc7; }
+  .spacesynth .volume-bar { background: #1e1637; }
+  .spacesynth .volume-level { background: linear-gradient(90deg, #b52cc7, #e762d7); box-shadow: 0 0 10px #e762d7; }
+  .spacesynth #currentInfo { color: #b52cc7; }
+  .spacesynth .style-btn { border-color: #b52cc7; color: #e762d7; }
+  .spacesynth .style-btn:hover, .spacesynth .style-btn.active { background-color: #b52cc7; }
+
+  /* Darksynth - Terminator inspired */
+  body.darksynth { background-color: #1a1a1a; color: #ff3c00; }
+  .darksynth .container { background: linear-gradient(45deg, #2b2b2b, #1a1a1a); border: 2px solid #ff3c00; box-shadow: 0 0 20px #ff3c00; }
+  .darksynth .logo { color: #ff3c00; text-shadow: 0 0 10px #b32900; }
+  .darksynth .btn { color: #ff3c00; }
+  .darksynth .btn:hover { text-shadow: 0 0 10px #b32900; }
+  .darksynth .volume-bar { background: #2b2b2b; }
+  .darksynth .volume-level { background: linear-gradient(90deg, #b32900, #ff3c00); box-shadow: 0 0 10px #ff3c00; }
+  .darksynth #currentInfo { color: #b32900; }
+  .darksynth .style-btn { border-color: #b32900; color: #ff3c00; }
+  .darksynth .style-btn:hover, .darksynth .style-btn.active { background-color: #b32900; }
+
+  /* Horrorsynth - 80s Horror */
+  body.horrorsynth { background-color: #000000; color: #ff0000; }
+  .horrorsynth .container { background: linear-gradient(45deg, #1a0000, #000000); border: 2px solid #ff0000; box-shadow: 0 0 20px #800000; }
+  .horrorsynth .logo { color: #ff0000; text-shadow: 0 0 10px #800000; }
+  .horrorsynth .btn { color: #ff0000; }
+  .horrorsynth .btn:hover { text-shadow: 0 0 10px #800000; }
+  .horrorsynth .volume-bar { background: #1a0000; }
+  .horrorsynth .volume-level { background: linear-gradient(90deg, #800000, #ff0000); box-shadow: 0 0 10px #ff0000; }
+  .horrorsynth #currentInfo { color: #800000; }
+  .horrorsynth .style-btn { border-color: #800000; color: #ff0000; }
+  .horrorsynth .style-btn:hover, .horrorsynth .style-btn.active { background-color: #800000; }
+
+  /* EBSM - 90s Electronica */
+  body.ebsm { background-color: #000033; color: #00ffff; }
+  .ebsm .container { background: linear-gradient(45deg, #000066, #000033); border: 2px solid #00ffff; box-shadow: 0 0 20px #0080ff; }
+  .ebsm .logo { color: #00ffff; text-shadow: 0 0 10px #0080ff; }
+  .ebsm .btn { color: #00ffff; }
+  .ebsm .btn:hover { text-shadow: 0 0 10px #0080ff; }
+  .ebsm .volume-bar { background: #000066; }
+  .ebsm .volume-level { background: linear-gradient(90deg, #0080ff, #00ffff); box-shadow: 0 0 10px #00ffff; }
+  .ebsm #currentInfo { color: #0080ff; }
+  .ebsm .style-btn { border-color: #0080ff; color: #00ffff; }
+  .ebsm .style-btn:hover, .ebsm .style-btn.active { background-color: #0080ff; }
 </style>
 </head>
-<body>
+<body class="chillsynth">
   <div class="container">
     <div class="overlay noise"></div>
 	<div class="overlay scanlines __web-inspector-hide-shortcut__"></div>
@@ -169,13 +272,22 @@
     <div id="currentInfo"></div>
     <canvas id="frequencyCanvas"></canvas>
     <canvas id="barsCanvas"></canvas>
-    <div class="controls" style="top: 50px;">
+    <div class="controls" style="top: 40px;">
   <button id="playBtn" class="btn">▶</button>
   <button id="muteBtn" class="btn">♫</button>
   <div class="volume-bar" style="cursor: pointer;">
-  <div class="volume-level"></div>
+    <div class="volume-level"></div>
+  </div>
 </div>
-</div>
+    <div class="style-buttons">
+      <button class="style-btn" data-style="nightride">NIGHTRIDE</button>
+      <button class="style-btn active" data-style="chillsynth">CHILLSYNTH</button>
+      <button class="style-btn" data-style="datawave">DATAWAVE</button>
+      <button class="style-btn" data-style="spacesynth">SPACESYNTH</button>
+      <button class="style-btn" data-style="darksynth">DARKSYNTH</button>
+      <button class="style-btn" data-style="horrorsynth">HORRORSYNTH</button>
+      <button class="style-btn" data-style="ebsm">EBSM</button>
+    </div>
   </div>
 
   <script>
@@ -185,6 +297,8 @@
     let analyser;
     let isMuted = false;
     let animationId;
+    let currentStyle = 'chillsynth';
+    let metaInfo = {};
 
     const playBtn = document.getElementById('playBtn');
     const muteBtn = document.getElementById('muteBtn');
@@ -193,6 +307,7 @@
     const volumeControl = document.querySelector('.volume-level');
     const frequencyCanvas = document.getElementById('frequencyCanvas');
     const barsCanvas = document.getElementById('barsCanvas');
+    const styleButtons = document.querySelectorAll('.style-btn');
     
     // Default volume to 50%
     let defaultVolume = 0.5;
@@ -201,25 +316,47 @@
     muteBtn.addEventListener('click', toggleMute);
     volumeControl.parentElement.addEventListener('click', adjustVolume);
 
+    styleButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        const newStyle = e.target.dataset.style;
+        if (newStyle !== currentStyle) {
+          document.body.className = newStyle; // Меняем цветовую схему сразу
+          currentStyle = newStyle;
+          styleButtons.forEach(btn => btn.classList.remove('active'));
+          e.target.classList.add('active');
+          updateVisualColors(); // Обновляем цвета визуализаторов
+          if (playing) {
+            stopAudio();
+            playAudio();
+          }
+          updateCurrentInfo();
+          updateButtonStyles(); // Обновляем стиль кнопок
+        }
+      });
+    });
+
     const sseUrl = 'https://nightride.fm/meta';
     const eventSource = new EventSource(sseUrl);
 
     eventSource.onmessage = (event) => {
       if (event.data !== "keepalive") {
-        let artist = "";
-        let title = "";
-
         const data = JSON.parse(event.data);
-        if (data[0].station === 'chillsynth') {
-          artist = data[0].artist || "";
-          title = data[0].title || "";
-
-          if (artist || title) {
-            currentInfo.textContent = `${artist} - ${title}`;
-          }
-        }
+        data.forEach(item => {
+          metaInfo[item.station] = item;
+        });
+        updateCurrentInfo();
       }
     };
+
+    function updateCurrentInfo() {
+      const currentMeta = metaInfo[currentStyle];
+      if (currentMeta) {
+        const { artist, title, album } = currentMeta;
+        currentInfo.textContent = `${artist} - ${title} (${album})`;
+      } else {
+        currentInfo.textContent = 'Loading track information...';
+      }
+    }
 
     function togglePlay() {
       if (playing) {
@@ -230,47 +367,67 @@
     }
 
     function playAudio() {
-      if (!audioElement || audioElement.ended || audioElement.paused) {
-        if (audioElement) {
-          audioElement.pause();
-        }
-        
-        audioElement = new Audio('https://stream.nightride.fm/chillsynth.mp3');
-        audioElement.crossOrigin = "anonymous";
-        audioElement.volume = defaultVolume;
-        
-        audioElement.onplay = () => {
-          status.textContent = 'Now playing';
-          playing = true;
-          playBtn.textContent = '❚❚';
-          setupAudioContext();
-        };
-        
-        audioElement.onpause = () => {
-          status.textContent = 'Paused';
-          playing = false;
-          playBtn.textContent = '▶';
-        };
-        
-        audioElement.onerror = (e) => {
-          console.error('Audio error:', e);
-          status.textContent = 'Error: Audio playback failed';
-          playing = false;
-          playBtn.textContent = '▶';
-        };
+      stopAudio();
+      
+      audioElement = new Audio(`https://stream.nightride.fm/${currentStyle}.mp3`);
+      audioElement.crossOrigin = "anonymous";
+      audioElement.volume = defaultVolume;
+      
+      status.textContent = 'Connecting...';
+      
+      audioElement.addEventListener('canplay', () => {
+        status.textContent = 'Now playing';
+        playing = true;
+        playBtn.textContent = '❚❚';
+        setupAudioContext();
+      });
 
-        status.textContent = 'Connecting...';
-        audioElement.play().catch(error => {
-          console.error('Error playing audio:', error);
-          status.textContent = 'Error: Unable to play audio';
-        });
-      }
+      audioElement.addEventListener('error', (e) => {
+        status.textContent = 'Error: Unable to play audio';
+        playing = false;
+        playBtn.textContent = '▶';
+      });
+
+      audioElement.play().catch(error => {
+        status.textContent = 'Error: Unable to play audio';
+        playing = false;
+        playBtn.textContent = '▶';
+      });
     }
 
     function pauseAudio() {
-      if (audioElement && !audioElement.paused) {
+      if (audioElement) {
         audioElement.pause();
+        status.textContent = 'Paused';
+        playing = false;
+        playBtn.textContent = '▶';
       }
+    }
+
+    function stopAudio() {
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.src = '';
+        audioElement.load();
+        audioElement = null;
+      }
+      if (audioContext && audioContext.state !== 'closed') {
+        audioContext.close().catch(error => {
+          console.warn('Error closing AudioContext:', error);
+        }).finally(() => {
+          audioContext = null;
+          analyser = null;
+        });
+      } else {
+        audioContext = null;
+        analyser = null;
+      }
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      playing = false;
+      playBtn.textContent = '▶';
     }
 
     function toggleMute() {
@@ -291,21 +448,24 @@
         audioElement.volume = volume;
         volumeControl.style.width = `${volume * 100}%`;
       }
+      defaultVolume = volume;
     }
 
     function setupAudioContext() {
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        analyser = audioContext.createAnalyser();
+      if (audioContext && audioContext.state !== 'closed') {
+        audioContext.close().catch(error => {
+          console.warn('Error closing existing AudioContext:', error);
+        });
       }
+      
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioContext.createAnalyser();
       
       const source = audioContext.createMediaElementSource(audioElement);
       source.connect(analyser);
       analyser.connect(audioContext.destination);
       
-      if (!animationId) {
-        updateVisualizers();
-      }
+      updateVisualizers();
     }
 
     function updateVisualizers() {
@@ -325,7 +485,7 @@
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
       
       ctx.lineWidth = 1;
-      ctx.strokeStyle = '#e02cd2';
+      ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('color'); // Обновляем цвет
       ctx.beginPath();
       
       const sliceWidth = WIDTH * 1.0 / (bufferLength / 4);
@@ -361,18 +521,34 @@
       const barWidth = (WIDTH / bufferLength) * 2.5;
       let x = 0;
       
+      const gradient = ctx.createLinearGradient(0, HEIGHT, 0, 0);
+      gradient.addColorStop(0, getComputedStyle(document.body).getPropertyValue('color')); // Обновляем цвет
+      gradient.addColorStop(1, getComputedStyle(document.querySelector('#currentInfo')).getPropertyValue('color')); // Обновляем цвет
+      
       for (let i = 0; i < bufferLength; i++) {
         const barHeight = (dataArray[i] / 255) * HEIGHT;
-        
-        const gradient = ctx.createLinearGradient(0, HEIGHT, 0, HEIGHT - barHeight);
-        gradient.addColorStop(0, '#a923c2');
-        gradient.addColorStop(1, '#FD6AF2');
         
         ctx.fillStyle = gradient;
         ctx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight);
         
         x += barWidth + 1;
       }
+    }
+
+    function updateVisualColors() {
+      drawFrequency();
+      drawBars();
+    }
+
+    function updateButtonStyles() {
+      styleButtons.forEach(button => {
+        const style = button.dataset.style;
+        if (style === currentStyle) {
+          button.classList.add('active');
+        } else {
+          button.classList.remove('active');
+        }
+      });
     }
 
     // Set canvas sizes
