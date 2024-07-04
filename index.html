@@ -112,6 +112,11 @@
        position: relative;
        border-radius: 5px;
        overflow: hidden;
+       transition: box-shadow 0.3s ease;
+   }
+
+   .volume-bar:hover {
+       box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
    }
 
   .volume-level {
@@ -305,6 +310,7 @@
     const status = document.getElementById('status');
     const currentInfo = document.getElementById('currentInfo');
     const volumeControl = document.querySelector('.volume-level');
+    const volumeBar = document.querySelector('.volume-bar');
     const frequencyCanvas = document.getElementById('frequencyCanvas');
     const barsCanvas = document.getElementById('barsCanvas');
     const styleButtons = document.querySelectorAll('.style-btn');
@@ -314,23 +320,56 @@
 
     playBtn.addEventListener('click', togglePlay);
     muteBtn.addEventListener('click', toggleMute);
-    volumeControl.parentElement.addEventListener('click', adjustVolume);
+    
+    volumeBar.addEventListener('mousedown', startVolumeChange);
+    document.addEventListener('mousemove', changeVolume);
+    document.addEventListener('mouseup', stopVolumeChange);
+
+    let isChangingVolume = false;
+
+    function startVolumeChange(e) {
+      isChangingVolume = true;
+      changeVolume(e);
+    }
+
+    function changeVolume(e) {
+      if (!isChangingVolume) return;
+      
+      const rect = volumeBar.getBoundingClientRect();
+      let x = e.clientX - rect.left;
+      x = Math.max(0, Math.min(x, rect.width));
+      const volume = x / rect.width;
+      
+      setVolume(volume);
+    }
+
+    function stopVolumeChange() {
+      isChangingVolume = false;
+    }
+
+    function setVolume(volume) {
+      if (audioElement) {
+        audioElement.volume = volume;
+      }
+      defaultVolume = volume;
+      volumeControl.style.width = `${volume * 100}%`;
+    }
 
     styleButtons.forEach(button => {
       button.addEventListener('click', (e) => {
         const newStyle = e.target.dataset.style;
         if (newStyle !== currentStyle) {
-          document.body.className = newStyle; // Меняем цветовую схему сразу
+          document.body.className = newStyle;
           currentStyle = newStyle;
           styleButtons.forEach(btn => btn.classList.remove('active'));
           e.target.classList.add('active');
-          updateVisualColors(); // Обновляем цвета визуализаторов
+          updateVisualColors();
           if (playing) {
             stopAudio();
             playAudio();
           }
           updateCurrentInfo();
-          updateButtonStyles(); // Обновляем стиль кнопок
+          updateButtonStyles();
         }
       });
     });
@@ -383,13 +422,13 @@
       });
 
       audioElement.addEventListener('error', (e) => {
-        status.textContent = 'Error: Unable to play audio';
+        status.textContent = 'Connecting...';
         playing = false;
         playBtn.textContent = '▶';
       });
 
       audioElement.play().catch(error => {
-        status.textContent = 'Error: Unable to play audio';
+        status.textContent = 'Connecting...';
         playing = false;
         playBtn.textContent = '▶';
       });
@@ -438,19 +477,6 @@
       }
     }
 
-    function adjustVolume(e) {
-      const rect = volumeControl.parentElement.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const width = rect.width;
-      const volume = Math.max(0, Math.min(1, x / width));
-      
-      if (audioElement) {
-        audioElement.volume = volume;
-        volumeControl.style.width = `${volume * 100}%`;
-      }
-      defaultVolume = volume;
-    }
-
     function setupAudioContext() {
       if (audioContext && audioContext.state !== 'closed') {
         audioContext.close().catch(error => {
@@ -485,7 +511,7 @@
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
       
       ctx.lineWidth = 1;
-      ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('color'); // Обновляем цвет
+      ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('color');
       ctx.beginPath();
       
       const sliceWidth = WIDTH * 1.0 / (bufferLength / 4);
@@ -522,8 +548,8 @@
       let x = 0;
       
       const gradient = ctx.createLinearGradient(0, HEIGHT, 0, 0);
-      gradient.addColorStop(0, getComputedStyle(document.body).getPropertyValue('color')); // Обновляем цвет
-      gradient.addColorStop(1, getComputedStyle(document.querySelector('#currentInfo')).getPropertyValue('color')); // Обновляем цвет
+      gradient.addColorStop(0, getComputedStyle(document.body).getPropertyValue('color'));
+      gradient.addColorStop(1, getComputedStyle(document.querySelector('#currentInfo')).getPropertyValue('color'));
       
       for (let i = 0; i < bufferLength; i++) {
         const barHeight = (dataArray[i] / 255) * HEIGHT;
@@ -551,7 +577,6 @@
       });
     }
 
-    // Set canvas sizes
     function resizeCanvas() {
       frequencyCanvas.width = frequencyCanvas.offsetWidth;
       frequencyCanvas.height = frequencyCanvas.offsetHeight;
