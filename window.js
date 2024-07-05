@@ -13,7 +13,8 @@ app.on('ready', function() {
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false
-    }
+    },
+	icon: __dirname + '/icon.ico'
     })
   
     mainWindow.loadURL(`file://${__dirname}/index.html`);

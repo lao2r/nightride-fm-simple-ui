@@ -1,15 +1,47 @@
 {
-  "name": "nightride-fm",
-  "version": "1.0.0",
+  "name": "nightride-fm-simple-ui",
+  "version": "0.0.1",
   "description": "Unofficial client for nightride.fm",
   "main": "window.js",
   "scripts": {
-    "test": "electron ."
+    "test": "electron .",
+    "publish": "electron-builder --publish always"
   },
   "author": "Andrey Labazin",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "electron": "^31.1.0",
     "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.nightridefm.app",
+    "productName": "NightRide FM",
+    "directories": {
+      "output": "build"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "NightRide FM"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "lao2r",
+        "repo": "nightride-fm-simple-ui"
+      }
+    ]
   }
 }
