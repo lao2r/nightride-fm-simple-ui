@@ -704,15 +704,6 @@
 <body class="chillsynth">
     <div class="container">
         <div id="titlebar" class="titlebar">
-            <button id="minimize-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                    fill="white">
-                    <path d="M5 16h14v2H5z" />
-                </svg></button>
-            <button id="close-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                    fill="white">
-                    <path
-                        d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-                </svg></button>
         </div>
         <div class="overlay noise"></div>
         <div class="overlay scanlines __web-inspector-hide-shortcut__"></div>
@@ -1024,12 +1015,14 @@
         }
     
         function updateVisualizers() {
+            console.log("Updating visualizers...");
             drawFrequency();
             drawBars();
             animationId = window.requestAnimationFrame(updateVisualizers);
         }
     
         function drawFrequency() {
+            console.log("Drawing frequency...");
             const WIDTH = frequencyCanvas.width;
             const HEIGHT = frequencyCanvas.height;
             const bufferLength = analyser.frequencyBinCount;
@@ -1064,6 +1057,7 @@
         }
     
         function drawBars() {
+            console.log("Drawing bars...");
             const WIDTH = barsCanvas.width;
             const HEIGHT = barsCanvas.height;
             const bufferLength = analyser.frequencyBinCount / 8;
