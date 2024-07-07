@@ -1015,14 +1015,12 @@
         }
     
         function updateVisualizers() {
-            console.log("Updating visualizers...");
             drawFrequency();
             drawBars();
             animationId = window.requestAnimationFrame(updateVisualizers);
         }
     
         function drawFrequency() {
-            console.log("Drawing frequency...");
             const WIDTH = frequencyCanvas.width;
             const HEIGHT = frequencyCanvas.height;
             const bufferLength = analyser.frequencyBinCount;
@@ -1057,7 +1055,6 @@
         }
     
         function drawBars() {
-            console.log("Drawing bars...");
             const WIDTH = barsCanvas.width;
             const HEIGHT = barsCanvas.height;
             const bufferLength = analyser.frequencyBinCount / 8;
