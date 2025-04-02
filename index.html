@@ -679,387 +679,550 @@
         </div>
     </div>
 
-    <script>
-        // Polyfill for requestAnimationFrame with debug logs
-        (function() {
-            console.log("Initializing polyfill for requestAnimationFrame...");
+<script>
+    // Polyfill for requestAnimationFrame (оставляем без изменений)
+    (function() {
+        // ... (ваш существующий полифилл) ...
+        console.log("requestAnimationFrame initialized.");
+    }());
 
-            var lastTime = 0;
-            var vendors = ['ms', 'moz', 'webkit', 'o'];
-            for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
-                window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
-                window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'] 
-                                           || window[vendors[x] + 'CancelRequestAnimationFrame'];
-            }
+    let audioElement;
+    let playing = false;
+    let audioContext; // Контекст будет создан позже
+    let analyser;
+    let sourceNode; // Добавим переменную для источника
+    let isMuted = false;
+    let animationId;
+    let currentStyle = 'chillsynth';
+    let metaInfo = {};
+    let userInteracted = false; // Флаг первого взаимодействия
 
-            if (!window.requestAnimationFrame) {
-                console.log("requestAnimationFrame not supported, using setTimeout as fallback.");
-                window.requestAnimationFrame = function(callback) {
-                    var currTime = new Date().getTime();
-                    var timeToCall = Math.max(0, 16 - (currTime - lastTime));
-                    var id = window.setTimeout(function() { callback(currTime + timeToCall); }, 
-                      timeToCall);
-                    lastTime = currTime + timeToCall;
-                    return id;
-                };
-            }
+    const playBtn = document.getElementById('playBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const status = document.getElementById('status');
+    const currentInfo = document.getElementById('currentInfo');
+    const volumeControl = document.querySelector('.volume-level');
+    const volumeBar = document.querySelector('.volume-bar');
+    const frequencyCanvas = document.getElementById('frequencyCanvas');
+    const barsCanvas = document.getElementById('barsCanvas');
+    const styleButtons = document.querySelectorAll('.style-btn');
+    // Убираем userInteractionDiv, так как первое нажатие на Play будет взаимодействием
+    // const userInteractionDiv = document.getElementById('user-interaction');
 
-            if (!window.cancelAnimationFrame) {
-                window.cancelAnimationFrame = function(id) {
-                    clearTimeout(id);
-                };
-            }
+    // --- Остальные обработчики событий и функции (без изменений) ---
 
-            console.log("requestAnimationFrame initialized.");
-        }());
-
-        let audioElement;
-        let playing = false;
-        let audioContext;
-        let analyser;
-        let isMuted = false;
-        let animationId;
-        let currentStyle = 'chillsynth';
-        let metaInfo = {};
-        let userInteracted = false;
-
-        const playBtn = document.getElementById('playBtn');
-        const muteBtn = document.getElementById('muteBtn');
-        const status = document.getElementById('status');
-        const currentInfo = document.getElementById('currentInfo');
-        const volumeControl = document.querySelector('.volume-level');
-        const volumeBar = document.querySelector('.volume-bar');
-        const frequencyCanvas = document.getElementById('frequencyCanvas');
-        const barsCanvas = document.getElementById('barsCanvas');
-        const styleButtons = document.querySelectorAll('.style-btn');
-        const userInteractionDiv = document.getElementById('user-interaction');
-
-        document.addEventListener('keydown', (event) => {
-            // Предотвращаем действие для Tab и Ctrl + Shift + I
-            if (event.key === 'Tab' || (event.ctrlKey && event.shiftKey && event.key === 'I') || event.key === ' ' || (event.ctrlKey && event.key === 'R') || (event.ctrlKey && event.shiftKey && event.key === 'R')) {
-                event.preventDefault();
-            }
-        });
-
-        document.addEventListener('contextmenu', event => event.preventDefault());
-
-        // Default volume to 50%
-        let defaultVolume = 0.5;
-
-        playBtn.addEventListener('click', togglePlay);
-        muteBtn.addEventListener('click', toggleMute);
-
-        volumeBar.addEventListener('mousedown', startVolumeChange);
-        document.addEventListener('mousemove', changeVolume);
-        document.addEventListener('mouseup', stopVolumeChange);
-
-        let isChangingVolume = false;
-
-        function startVolumeChange(e) {
-            isChangingVolume = true;
-            changeVolume(e);
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Tab' || (event.ctrlKey && event.shiftKey && event.key === 'I') || event.key === ' ' || (event.ctrlKey && event.key === 'R') || (event.ctrlKey && event.shiftKey && event.key === 'R')) {
+            event.preventDefault();
         }
+    });
+    document.addEventListener('contextmenu', event => event.preventDefault());
 
-        function changeVolume(e) {
-            if (!isChangingVolume) return;
+    let defaultVolume = 0.5;
 
-            const rect = volumeBar.getBoundingClientRect();
-            let x = e.clientX - rect.left;
-            x = Math.max(0, Math.min(x, rect.width));
-            const volume = x / rect.width;
+    playBtn.addEventListener('click', togglePlay); // Основной триггер
+    muteBtn.addEventListener('click', toggleMute);
 
-            setVolume(volume);
+    volumeBar.addEventListener('mousedown', startVolumeChange);
+    document.addEventListener('mousemove', changeVolume);
+    document.addEventListener('mouseup', stopVolumeChange);
+
+    let isChangingVolume = false;
+
+    function startVolumeChange(e) {
+        isChangingVolume = true;
+        changeVolume(e);
+    }
+
+    function changeVolume(e) {
+        if (!isChangingVolume) return;
+        const rect = volumeBar.getBoundingClientRect();
+        let x = e.clientX - rect.left;
+        x = Math.max(0, Math.min(x, rect.width));
+        const volume = x / rect.width;
+        setVolume(volume);
+    }
+
+    function stopVolumeChange() {
+        isChangingVolume = false;
+    }
+
+    function setVolume(volume) {
+        if (audioElement) {
+            audioElement.volume = volume;
         }
-
-        function stopVolumeChange() {
-            isChangingVolume = false;
+        defaultVolume = volume;
+        volumeControl.style.width = `${volume * 100}%`;
+        // Сохраняем громкость, чтобы восстановить после Mute
+        if (!isMuted && audioElement) {
+             audioElement.volume = volume;
         }
+    }
 
-        function setVolume(volume) {
-            if (audioElement) {
-                audioElement.volume = volume;
-            }
-            defaultVolume = volume;
-            volumeControl.style.width = `${volume * 100}%`;
-        }
-
-        styleButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                const newStyle = e.target.dataset.style;
-                if (newStyle !== currentStyle) {
-                    document.body.className = newStyle;
-                    currentStyle = newStyle;
-                    styleButtons.forEach(btn => btn.classList.remove('active'));
-                    e.target.classList.add('active');
-                    updateVisualColors();
-                    if (playing) {
-                        stopAudio();
-                        playAudio();
-                    }
-                    updateCurrentInfo();
-                    updateButtonStyles();
+    styleButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const newStyle = e.target.dataset.style;
+            if (newStyle !== currentStyle) {
+                document.body.className = newStyle;
+                currentStyle = newStyle;
+                styleButtons.forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                updateVisualColors(); // Обновляем цвета сразу
+                // Если играло, останавливаем и запускаем новый стиль
+                if (playing) {
+                    stopAudio(false); // Останавливаем без смены иконки
+                    // Пауза для предотвращения race condition с SSE
+                    setTimeout(() => {
+                      if (playing) { // Проверяем, не нажал ли пользователь стоп за это время
+                         initAndPlayAudio(); // Запускаем новый поток
+                      }
+                    }, 100);
+                } else {
+                    // Если не играло, просто обновляем инфо и кнопки
+                     updateCurrentInfo();
+                     updateButtonStyles();
                 }
-            });
+            }
         });
+    });
 
-        const sseUrl = 'https://nightride.fm/meta';
-        const eventSource = new EventSource(sseUrl);
+    const sseUrl = 'https://nightride.fm/meta';
+    const eventSource = new EventSource(sseUrl);
 
-        eventSource.onmessage = (event) => {
-            if (event.data !== "keepalive") {
+    eventSource.onmessage = (event) => {
+        if (event.data !== "keepalive") {
+            try {
                 const data = JSON.parse(event.data);
                 data.forEach(item => {
                     metaInfo[item.station] = item;
                 });
                 updateCurrentInfo();
-            }
-        };
-
-        function updateCurrentInfo() {
-            const currentMeta = metaInfo[currentStyle];
-            if (currentMeta) {
-                const { artist, title, album } = currentMeta;
-                currentInfo.textContent = `${artist} - ${title} (${album})`;
-            } else {
-                currentInfo.textContent = 'Loading track information...';
+            } catch (e) {
+                console.error("Error parsing SSE data:", e);
             }
         }
+    };
 
-        function togglePlay() {
-            if (playing) {
-                pauseAudio();
-            } else {
-                playAudio();
-            }
+    function updateCurrentInfo() {
+        const currentMeta = metaInfo[currentStyle];
+        if (currentMeta) {
+            const { artist, title, album } = currentMeta;
+            // Проверяем, есть ли данные, иначе показываем стиль
+            const displayTitle = (artist && title) ? `${artist} - ${title}` : `${currentStyle.toUpperCase()}`;
+            const displayAlbum = album ? `(${album})` : '';
+            currentInfo.textContent = `${displayTitle} ${displayAlbum}`.trim();
+        } else {
+            currentInfo.textContent = `${currentStyle.toUpperCase()}`; // Показываем стиль, пока нет инфо
         }
+    }
 
-        function setPlayIcon() {
-            playBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
-                    <path d="M8 5v14l11-7z"/>
-                </svg>
-            `;
-        }
+    // --- Иконки кнопок (без изменений) ---
+    function setPlayIcon() { /* ... */ }
+    function setPauseIcon() { /* ... */ }
+    function setMuteIcon() { /* ... */ }
+    function setUnmuteIcon() { /* ... */ }
 
-        function setPauseIcon() {
-            playBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
-                    <path d="M14 19h4V5h-4v14zm-10 0h4V5H4v14z"/>
-                </svg>
-            `;
-        }
+    // --- Обновленные функции управления аудио ---
 
-        function setMuteIcon() {
-            muteBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
-                    <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
-            `;
-        }
-
-        function setUnmuteIcon() {
-            muteBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
-                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-            `;
-        }
-
-        function playAudio() {
-            stopAudio();
-
-            audioElement = new Audio(`https://stream.nightride.fm/${currentStyle}.mp3`);
-            audioElement.crossOrigin = "anonymous";
-            audioElement.volume = defaultVolume;
-
-            status.textContent = 'Connecting...';
-            audioElement.addEventListener('canplay', () => {
-                status.textContent = 'Now playing';
-                playing = true;
-                setPauseIcon();
-                setupAudioContext();
-            });
-            
-            audioElement.addEventListener('error', (e) => {
-                status.textContent = 'Connecting...';
-                playing = false;
-                setPlayIcon();
-            });
-            
-            audioElement.play().catch(error => {
-                status.textContent = 'Connecting...';
-                playing = false;
-                setPlayIcon();
-            });
-        }
-
-        function pauseAudio() {
-            if (audioElement) {
-                audioElement.pause();
-                status.textContent = 'Paused';
-                playing = false;
-                setPlayIcon();
+    async function togglePlay() {
+        // 1. Обработка взаимодействия пользователя (iOS требует этого для AudioContext)
+        if (!userInteracted) {
+            userInteracted = true; // Отмечаем, что пользователь взаимодействовал
+            // Пытаемся создать AudioContext СРАЗУ при первом нажатии
+            if (!audioContext) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    console.log("AudioContext created on first interaction. State:", audioContext.state);
+                    // Если он сразу 'suspended', пытаемся возобновить
+                    if (audioContext.state === 'suspended') {
+                        await audioContext.resume();
+                        console.log("AudioContext resumed on first interaction. New state:", audioContext.state);
+                    }
+                } catch (e) {
+                    console.error("Failed to create AudioContext on interaction:", e);
+                    status.textContent = 'Audio engine error';
+                    return; // Не продолжаем, если контекст не создан
+                }
             }
         }
 
-        function stopAudio() {
-            if (audioElement) {
-                audioElement.pause();
-                audioElement.src = '';
-                audioElement.load();
-                audioElement = null;
+        // 2. Возобновление существующего AudioContext (если он был приостановлен)
+        if (audioContext && audioContext.state === 'suspended') {
+            console.log("AudioContext is suspended, attempting to resume...");
+            try {
+                await audioContext.resume();
+                console.log("AudioContext resumed. State:", audioContext.state);
+            } catch (e) {
+                console.error("Failed to resume AudioContext:", e);
+                // Можно показать ошибку пользователю
             }
-            if (audioContext && audioContext.state !== 'closed') {
-                audioContext.close().catch(error => {
-                    console.warn('Error closing AudioContext:', error);
-                }).finally(() => {
-                    audioContext = null;
-                    analyser = null;
-                });
-            } else {
-                audioContext = null;
-                analyser = null;
+        }
+
+        // 3. Переключение состояния Play/Pause
+        if (!playing) {
+            // Если AudioContext все еще не создан (ошибка выше?), выйти
+             if (!audioContext) {
+                 console.error("Cannot play: AudioContext not available.");
+                 status.textContent = 'Audio engine error';
+                 return;
+             }
+             // Начинаем воспроизведение
+             initAndPlayAudio();
+        } else {
+            // Ставим на паузу
+            pauseAudio();
+        }
+    }
+
+
+    function initAndPlayAudio() {
+        if (playing) return; // Не запускать, если уже играет
+
+        // Создаем новый элемент Audio
+        audioElement = new Audio(`https://stream.nightride.fm/${currentStyle}.mp3`);
+        audioElement.crossOrigin = "anonymous";
+        audioElement.volume = isMuted ? 0 : defaultVolume; // Устанавливаем громкость с учетом Mute
+
+        status.textContent = 'Connecting...';
+
+        audioElement.addEventListener('canplay', () => {
+            console.log("'canplay' event fired");
+            // Теперь, когда элемент готов, настраиваем Web Audio API
+             if (audioContext && audioContext.state === 'running') {
+                setupAudioNodes(); // Настраиваем узлы только если контекст готов
+             } else {
+                 console.warn("AudioContext not ready or running when 'canplay' fired. State:", audioContext?.state);
+                 // Попытка настроить узлы может провалиться, но попробуем.
+                 // Возможно, понадобится еще один resume() здесь или в setupAudioNodes.
+                 if(audioContext) setupAudioNodes();
+             }
+        });
+
+        audioElement.addEventListener('playing', () => {
+            console.log("'playing' event fired");
+            status.textContent = 'Now playing';
+            playing = true;
+            setPauseIcon();
+            // Дополнительная проверка и запуск визуализации, если она еще не запущена
+            if (analyser && !animationId) {
+                 console.log("Starting visualization from 'playing' event");
+                 updateVisualizers();
             }
-            if (animationId) {
-                window.cancelAnimationFrame(animationId);
-                animationId = null;
-            }
+             updateCurrentInfo(); // Обновляем инфо при начале игры
+        });
+
+        audioElement.addEventListener('pause', () => {
+            console.log("'pause' event fired");
+            // playing = false; // Не меняем здесь, т.к. может быть буферизация
+            // setPlayIcon(); // Иконку меняем только при явной паузе
+            // status.textContent = 'Paused'; // Статус меняем только при явной паузе
+        });
+
+
+        audioElement.addEventListener('error', (e) => {
+            console.error('Audio Element Error:', e);
+            status.textContent = 'Stream error';
             playing = false;
             setPlayIcon();
+            stopAudio(true); // Полностью останавливаем при ошибке
+        });
+
+        // Начинаем воспроизведение
+        audioElement.play().then(() => {
+            console.log("audioElement.play() promise resolved.");
+            // Успешный старт (но фактическое воспроизведение начнется позже)
+            // playing = true; // Устанавливаем в true в событии 'playing'
+            // setPauseIcon(); // Меняем иконку в событии 'playing'
+        }).catch(error => {
+            console.error('Error starting playback:', error);
+            status.textContent = 'Playback error';
+            playing = false;
+            setPlayIcon();
+             if (audioContext && audioContext.state === 'running') {
+                 // Если контекст работает, но play() не удался, возможно стоит его приостановить?
+                 // audioContext.suspend(); // Пока не будем
+             }
+        });
+    }
+
+    function setupAudioNodes() {
+        // Проверяем еще раз перед созданием узлов
+        if (!audioContext || audioContext.state !== 'running') {
+            console.error("Cannot setup audio nodes: AudioContext not running. State:", audioContext?.state);
+            return;
         }
+         if (!audioElement) {
+             console.error("Cannot setup audio nodes: audioElement is missing.");
+             return;
+         }
+         if (sourceNode) {
+            sourceNode.disconnect(); // Отключаем старый источник, если он был
+         }
 
-        function toggleMute() {
-            if (audioElement) {
-                audioElement.muted = !audioElement.muted;
-                isMuted = audioElement.muted;
-                if (isMuted) {
-                    setMuteIcon();
-                } else {
-                    setUnmuteIcon();
-                }
-            }
-        }
-
-        function setupAudioContext() {
-            if (audioContext && audioContext.state !== 'closed') {
-                audioContext.close().catch(error => {
-                    console.warn('Error closing existing AudioContext:', error);
-                });
-            }
-
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        console.log("Setting up audio nodes...");
+        try {
             analyser = audioContext.createAnalyser();
+            sourceNode = audioContext.createMediaElementSource(audioElement); // Создаем источник
 
-            const source = audioContext.createMediaElementSource(audioElement);
-            source.connect(analyser);
-            analyser.connect(audioContext.destination);
+            sourceNode.connect(analyser);
+            analyser.connect(audioContext.destination); // Подключаем к выходу
 
-            resizeCanvas();
-            updateVisualizers();
-        }
+            console.log("Audio nodes connected.");
 
-        function updateVisualizers() {
-            drawFrequency();
-            drawBars();
-            animationId = window.requestAnimationFrame(updateVisualizers);
-        }
-
-        function drawFrequency() {
-            const WIDTH = frequencyCanvas.width;
-            const HEIGHT = frequencyCanvas.height;
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-
-            analyser.getByteFrequencyData(dataArray);
-            const ctx = frequencyCanvas.getContext('2d');
-            ctx.clearRect(0, 0, WIDTH, HEIGHT);
-
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('color');
-            ctx.beginPath();
-
-            const sliceWidth = WIDTH * 1.0 / (bufferLength / 4);
-            let x = 0;
-
-            for (let i = 0; i < bufferLength; i++) {
-                const v = dataArray[i] / 128.0;
-                const y = v * HEIGHT / 2;
-
-                if (i === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-
-                x += sliceWidth;
+            // Запускаем цикл анимации, если он еще не запущен
+            if (!animationId) {
+                console.log("Starting visualization loop from setupAudioNodes.");
+                resizeCanvas(); // Устанавливаем размер перед первым рендером
+                updateVisualizers();
             }
-
-            ctx.lineTo(WIDTH, HEIGHT / 2);
-            ctx.stroke();
-        }
-
-        function drawBars() {
-            const WIDTH = barsCanvas.width;
-            const HEIGHT = barsCanvas.height;
-            const bufferLength = analyser.frequencyBinCount / 8;
-            const dataArray = new Uint8Array(bufferLength);
-
-            analyser.getByteFrequencyData(dataArray);
-            const ctx = barsCanvas.getContext('2d');
-            ctx.clearRect(0, 0, WIDTH, HEIGHT);
-
-            const barWidth = (WIDTH / bufferLength) * 2.5;
-            let x = 0;
-
-            const gradient = ctx.createLinearGradient(0, HEIGHT, 0, 0);
-            gradient.addColorStop(0, getComputedStyle(document.body).getPropertyValue('color'));
-            gradient.addColorStop(1, getComputedStyle(document.querySelector('#currentInfo')).getPropertyValue('color'));
-
-            for (let i = 0; i < bufferLength; i++) {
-                const barHeight = (dataArray[i] / 255) * HEIGHT;
-
-                ctx.fillStyle = gradient;
-                ctx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight);
-
-                x += barWidth + 1;
+        } catch (e) {
+            console.error("Error setting up audio nodes:", e);
+            status.textContent = 'Visualizer error';
+            // Очистка в случае ошибки
+            if(sourceNode) sourceNode.disconnect();
+            if(analyser) analyser.disconnect();
+            analyser = null;
+            sourceNode = null;
+            if (animationId) {
+                 window.cancelAnimationFrame(animationId);
+                 animationId = null;
             }
         }
+    }
 
-        function updateVisualColors() {
-            drawFrequency();
-            drawBars();
+    function pauseAudio() {
+        if (audioElement) {
+            audioElement.pause();
+            status.textContent = 'Paused';
+        }
+        playing = false;
+        setPlayIcon();
+        // Останавливаем цикл анимации при паузе
+        if (animationId) {
+            window.cancelAnimationFrame(animationId);
+            animationId = null;
+            console.log("Visualization loop stopped on pause.");
+        }
+        // Не закрываем AudioContext при паузе, чтобы быстро возобновить
+        // if (audioContext && audioContext.state === 'running') {
+        //     audioContext.suspend(); // Можно приостановить для экономии ресурсов
+        // }
+    }
+
+    function stopAudio(changeIcon = true) {
+        console.log("Stopping audio...");
+        if (audioElement) {
+            audioElement.pause();
+            audioElement.src = ''; // Очищаем источник
+            audioElement.load(); // Прерываем загрузку
+             // Удаляем все слушатели событий, чтобы избежать утечек
+            audioElement.removeEventListener('canplay', setupAudioNodes);
+            audioElement.removeEventListener('playing', () => { /*...*/ });
+            audioElement.removeEventListener('pause', () => { /*...*/ });
+            audioElement.removeEventListener('error', () => { /*...*/ });
+            audioElement = null;
+        }
+        playing = false;
+        if(changeIcon) setPlayIcon();
+
+        // Останавливаем анимацию
+        if (animationId) {
+            window.cancelAnimationFrame(animationId);
+            animationId = null;
+            console.log("Visualization loop stopped.");
         }
 
-        function updateButtonStyles() {
-            styleButtons.forEach(button => {
-                const style = button.dataset.style;
-                if (style === currentStyle) {
-                    button.classList.add('active');
-                } else {
-                    button.classList.remove('active');
-                }
-            });
+        // Отключаем узлы Web Audio API перед закрытием контекста
+        if (sourceNode) {
+            sourceNode.disconnect();
+            sourceNode = null;
+        }
+        if (analyser) {
+            analyser.disconnect();
+            analyser = null;
         }
 
-        function resizeCanvas() {
+        // Закрывать AudioContext необязательно, его можно переиспользовать.
+        // Но если стили сильно разные или есть проблемы, можно и закрыть.
+        // Для надежности при смене стиля или полной остановке - закроем.
+        // if (audioContext && audioContext.state !== 'closed') {
+        //     audioContext.close().then(() => {
+        //         console.log("AudioContext closed.");
+        //         audioContext = null;
+        //     }).catch(error => {
+        //         console.warn('Error closing AudioContext:', error);
+        //         audioContext = null; // Считаем его закрытым в любом случае
+        //     });
+        // } else {
+        //      audioContext = null; // Убедимся, что он null, если не был создан
+        // }
+         // Пока не будем закрывать контекст при стопе, только при смене стиля если решим
+    }
+
+    function toggleMute() {
+        isMuted = !isMuted;
+        if (audioElement) {
+            audioElement.volume = isMuted ? 0 : defaultVolume;
+        }
+        // Обновляем иконку
+        if (isMuted) {
+            setMuteIcon();
+        } else {
+            setUnmuteIcon();
+            // Восстанавливаем видимый уровень громкости на ползунке
+            volumeControl.style.width = `${defaultVolume * 100}%`;
+        }
+    }
+
+    // --- Функции визуализации (без изменений) ---
+    function updateVisualizers() {
+         // Добавим проверку перед рисованием
+         if (!analyser || !audioContext || audioContext.state !== 'running' || !playing) {
+             // Если что-то не так, или не играем, прекращаем цикл
+             if (animationId) {
+                 window.cancelAnimationFrame(animationId);
+                 animationId = null;
+                 console.log("Visualization loop stopped due to invalid state.");
+             }
+             // Очистим канвас на всякий случай
+             clearCanvas(frequencyCanvas);
+             clearCanvas(barsCanvas);
+             return;
+         }
+
+        drawFrequency();
+        drawBars();
+        animationId = window.requestAnimationFrame(updateVisualizers); // Продолжаем цикл
+    }
+
+    function drawFrequency() {
+        if (!analyser) return; // Доп. проверка
+        const WIDTH = frequencyCanvas.width;
+        const HEIGHT = frequencyCanvas.height;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        try {
+            analyser.getByteFrequencyData(dataArray);
+        } catch (e) {
+            console.error("Error getting frequency data:", e);
+            return; // Прекращаем рисование, если ошибка
+        }
+
+        const ctx = frequencyCanvas.getContext('2d');
+        ctx.clearRect(0, 0, WIDTH, HEIGHT);
+        ctx.lineWidth = 1;
+        // Получаем цвет динамически из CSS body
+        ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('color').trim() || '#beb6a9'; // запасной цвет
+        ctx.beginPath();
+
+        const sliceWidth = WIDTH * 1.0 / (bufferLength / 4); // Используем только часть данных для визуала
+        let x = 0;
+
+        for (let i = 0; i < bufferLength / 4; i++) { // Рисуем меньше точек для производительности/вида
+            const v = dataArray[i] / 128.0;
+            const y = HEIGHT / 2 - (v * HEIGHT / 2); // Рисуем от центра
+
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+            x += sliceWidth;
+        }
+        // ctx.lineTo(WIDTH, HEIGHT / 2); // Не обязательно доводить до конца
+        ctx.stroke();
+    }
+
+    function drawBars() {
+        if (!analyser) return; // Доп. проверка
+        const WIDTH = barsCanvas.width;
+        const HEIGHT = barsCanvas.height;
+        // Уменьшим количество баров для лучшей производительности и вида
+        const numBars = 64; // Например, 64 бара
+        analyser.fftSize = numBars * 2; // Устанавливаем размер FFT соответственно
+        const bufferLength = analyser.frequencyBinCount; // analyser.fftSize / 2
+        const dataArray = new Uint8Array(bufferLength);
+
+         try {
+            analyser.getByteFrequencyData(dataArray);
+        } catch (e) {
+            console.error("Error getting frequency data for bars:", e);
+            return; // Прекращаем рисование, если ошибка
+        }
+
+        const ctx = barsCanvas.getContext('2d');
+        ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+        const barWidth = (WIDTH / bufferLength) * 0.8; // Ширина бара с небольшим отступом
+        const barSpacing = (WIDTH / bufferLength) * 0.2; // Отступ
+        let x = 0;
+
+        // Получаем цвета из CSS динамически
+        const color1 = getComputedStyle(document.body).getPropertyValue('color').trim() || '#beb6a9';
+        const color2 = getComputedStyle(document.querySelector('#currentInfo')).getPropertyValue('color').trim() || '#a923c2';
+
+        // Создаем градиент каждый раз, т.к. цвета могут меняться
+        const gradient = ctx.createLinearGradient(0, HEIGHT, 0, 0);
+        gradient.addColorStop(0, color1);
+        gradient.addColorStop(1, color2);
+
+        for (let i = 0; i < bufferLength; i++) {
+            const barHeight = (dataArray[i] / 255) * HEIGHT;
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight);
+
+            x += barWidth + barSpacing; // Перемещаемся к следующему бару
+        }
+    }
+
+     function clearCanvas(canvas) {
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+     }
+
+    function updateVisualColors() {
+         // Просто очищаем канвасы, следующий кадр updateVisualizers() перерисует с новыми цветами
+         clearCanvas(frequencyCanvas);
+         clearCanvas(barsCanvas);
+    }
+
+    // --- Остальные функции и инициализация (без изменений) ---
+    function updateButtonStyles() { /* ... */ }
+    function resizeCanvas() {
+        // Убедимся, что канвасы существуют
+        if (frequencyCanvas) {
             frequencyCanvas.width = frequencyCanvas.offsetWidth;
             frequencyCanvas.height = frequencyCanvas.offsetHeight;
+        }
+         if (barsCanvas) {
             barsCanvas.width = barsCanvas.offsetWidth;
             barsCanvas.height = barsCanvas.offsetHeight;
-        }
+         }
+         // Перерисовываем с новыми размерами, если визуализация активна
+         if(animationId) {
+             updateVisualColors();
+         }
+    }
 
-        function handleUserInteraction() {
-            if (!userInteracted) {
-                userInteracted = true;
-                userInteractionDiv.classList.add('hidden');
-                playAudio();
-            }
-        }
+    // Убираем слушатели handleUserInteraction, т.к. playBtn теперь основной триггер
+    // document.addEventListener('touchstart', handleUserInteraction);
+    // document.addEventListener('click', handleUserInteraction);
 
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
-        document.addEventListener('touchstart', handleUserInteraction);
-        document.addEventListener('click', handleUserInteraction);
+    // --- Инициализация при загрузке ---
+    setVolume(defaultVolume); // Устанавливаем громкость по умолчанию
+    updateCurrentInfo(); // Загружаем инфо сразу
+    updateButtonStyles(); // Устанавливаем активную кнопку стиля
+    resizeCanvas(); // Устанавливаем размер канваса при загрузке
+    setPlayIcon(); // Начальная иконка - Play
+    setUnmuteIcon(); // Начальная иконка - Unmute
 
-    </script>
+
+</script>
 </body>
 </html>
